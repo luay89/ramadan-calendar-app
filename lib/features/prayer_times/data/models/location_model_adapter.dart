@@ -1,0 +1,49 @@
+import 'package:hive/hive.dart';
+import 'location_model.dart';
+
+/// Hive Adapter for LocationModel
+class LocationModelAdapter extends TypeAdapter<LocationModel> {
+  @override
+  final int typeId = 1;
+
+  @override
+  LocationModel read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return LocationModel(
+      latitude: fields[0] as double,
+      longitude: fields[1] as double,
+      cityName: fields[2] as String?,
+      countryName: fields[3] as String?,
+      timezone: fields[4] as String?,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, LocationModel obj) {
+    writer
+      ..writeByte(5)
+      ..writeByte(0)
+      ..write(obj.latitude)
+      ..writeByte(1)
+      ..write(obj.longitude)
+      ..writeByte(2)
+      ..write(obj.cityName)
+      ..writeByte(3)
+      ..write(obj.countryName)
+      ..writeByte(4)
+      ..write(obj.timezone);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LocationModelAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}

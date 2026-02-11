@@ -1,0 +1,403 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:just_audio/just_audio.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/date_utils.dart';
+import '../../../../core/services/adhan_audio_service.dart';
+import '../../../../core/services/adhan_notification_service.dart';
+import '../../domain/entities/prayer_times_entity.dart';
+import '../bloc/prayer_times_bloc.dart';
+import '../widgets/prayer_time_card.dart';
+import '../widgets/next_prayer_widget.dart';
+import '../widgets/location_search_widget.dart';
+
+/// صفحة مواقيت الصلاة
+class PrayerTimesPage extends StatefulWidget {
+  const PrayerTimesPage({super.key});
+
+  @override
+  State<PrayerTimesPage> createState() => _PrayerTimesPageState();
+}
+
+class _PrayerTimesPageState extends State<PrayerTimesPage> {
+  final AdhanAudioService _adhanService = AdhanAudioService();
+  final AdhanNotificationService _notificationService =
+      AdhanNotificationService();
+  bool _isPlayingAdhan = false;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<PrayerTimesBloc>().add(const LoadPrayerTimes());
+    _initAdhanService();
+  }
+
+  Future<void> _initAdhanService() async {
+    await _adhanService.initialize();
+    await _notificationService.initialize();
+    _adhanService.playerStateStream.listen((state) {
+      if (mounted) {
+        setState(() {
+          _isPlayingAdhan = state.playing;
+        });
+        // إيقاف عند انتهاء الأذان
+        if (state.processingState == ProcessingState.completed) {
+          setState(() {
+            _isPlayingAdhan = false;
+          });
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _adhanService.stopAdhan();
+    super.dispose();
+  }
+
+  /// جدولة الأذان للصلوات المفعلة
+  Future<void> _scheduleEnabledAdhans(PrayerTimesEntity prayerTimes) async {
+    await _notificationService.scheduleAllEnabledAdhans(
+      fajrTime: prayerTimes.fajr,
+      dhuhrTime: prayerTimes.dhuhr,
+      asrTime: prayerTimes.asr,
+      maghribTime: prayerTimes.maghrib,
+      ishaTime: prayerTimes.isha,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('مواقيت الصلاة'),
+        actions: [
+          IconButton(
+            onPressed: _toggleAdhan,
+            icon: Icon(
+              _isPlayingAdhan ? Icons.stop_circle : Icons.volume_up,
+              color: _isPlayingAdhan ? AppColors.error : null,
+            ),
+            tooltip: _isPlayingAdhan ? 'إيقاف الأذان' : 'تشغيل الأذان',
+          ),
+          IconButton(
+            onPressed: () => _showLocationSearch(context),
+            icon: const Icon(Icons.location_on),
+            tooltip: 'تغيير الموقع',
+          ),
+          IconButton(
+            onPressed: () => _showDatePicker(context),
+            icon: const Icon(Icons.calendar_today),
+            tooltip: 'تغيير التاريخ',
+          ),
+        ],
+      ),
+      body: BlocBuilder<PrayerTimesBloc, PrayerTimesState>(
+        builder: (context, state) {
+          if (state is PrayerTimesLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (state is PrayerTimesError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: AppColors.error,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(state.message, textAlign: TextAlign.center),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      context.read<PrayerTimesBloc>().add(
+                        const LoadPrayerTimes(),
+                      );
+                    },
+                    child: const Text('إعادة المحاولة'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          if (state is PrayerTimesLoaded) {
+            // جدولة الأذان للصلوات المفعلة
+            _scheduleEnabledAdhans(state.prayerTimes);
+            
+            return RefreshIndicator(
+              onRefresh: () async {
+                context.read<PrayerTimesBloc>().add(const LoadPrayerTimes());
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    // معلومات الموقع والتاريخ
+                    _buildHeader(state),
+                    const SizedBox(height: 16),
+
+                    // الصلاة القادمة
+                    NextPrayerWidget(
+                      prayerName: state.nextPrayer.key,
+                      prayerTime: state.nextPrayer.value,
+                      remainingTime: state.timeUntilNextPrayer,
+                    ),
+                    const SizedBox(height: 24),
+
+                    // قائمة المواقيت
+                    _buildPrayerTimesList(state.prayerTimes),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          return const SizedBox.shrink();
+        },
+      ),
+    );
+  }
+
+  Widget _buildHeader(PrayerTimesLoaded state) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.location_on, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    state.location.fullName,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.calendar_today, color: AppColors.secondary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    AppDateUtils.formatFullDate(state.selectedDate),
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPrayerTimesList(PrayerTimesEntity prayerTimes) {
+    // قائمة الصلوات مع إمكانية تفعيل الأذان (ماعدا الشروق)
+    final prayers = [
+      (
+        'الفجر',
+        prayerTimes.fajr,
+        PrayerType.fajr,
+        AppColors.fajrColor,
+        PrayerName.fajr,
+        true,
+      ),
+      (
+        'الشروق',
+        prayerTimes.sunrise,
+        PrayerType.sunrise,
+        AppColors.sunriseColor,
+        null,
+        false,
+      ),
+      (
+        'الظهر',
+        prayerTimes.dhuhr,
+        PrayerType.dhuhr,
+        AppColors.dhuhrColor,
+        PrayerName.dhuhr,
+        true,
+      ),
+      (
+        'العصر',
+        prayerTimes.asr,
+        PrayerType.asr,
+        AppColors.asrColor,
+        PrayerName.asr,
+        true,
+      ),
+      (
+        'المغرب',
+        prayerTimes.maghrib,
+        PrayerType.maghrib,
+        AppColors.maghribColor,
+        PrayerName.maghrib,
+        true,
+      ),
+      (
+        'العشاء',
+        prayerTimes.isha,
+        PrayerType.isha,
+        AppColors.ishaColor,
+        PrayerName.isha,
+        true,
+      ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'مواقيت الصلاة',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            TextButton.icon(
+              onPressed: _showAdhanSettingsInfo,
+              icon: const Icon(Icons.info_outline, size: 18),
+              label: const Text('تفعيل الأذان'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ...prayers.map(
+          (prayer) => PrayerTimeCard(
+            name: prayer.$1,
+            time: prayer.$2,
+            color: prayer.$4,
+            isPassed: DateTime.now().isAfter(prayer.$2),
+            showAdhanToggle: prayer.$6,
+            prayerName: prayer.$5,
+          ),
+        ),
+
+        // الأوقات الإضافية
+        if (prayerTimes.midnight != null || prayerTimes.lastThird != null) ...[
+          const SizedBox(height: 16),
+          Text(
+            'أوقات مستحبة',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          if (prayerTimes.midnight != null)
+            PrayerTimeCard(
+              name: 'منتصف الليل الشرعي',
+              time: prayerTimes.midnight!,
+              color: AppColors.ramadanBlue,
+              isPassed: DateTime.now().isAfter(prayerTimes.midnight!),
+            ),
+          if (prayerTimes.lastThird != null)
+            PrayerTimeCard(
+              name: 'الثلث الأخير من الليل',
+              time: prayerTimes.lastThird!,
+              color: AppColors.ramadanPurple,
+              isPassed: DateTime.now().isAfter(prayerTimes.lastThird!),
+            ),
+        ],
+      ],
+    );
+  }
+
+  void _showLocationSearch(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (ctx) => LocationSearchWidget(
+            onLocationChanged: () {
+              // إعادة تحميل أوقات الصلاة بعد تغيير الموقع
+              context.read<PrayerTimesBloc>().add(const LoadPrayerTimes());
+            },
+          ),
+    );
+  }
+
+  void _showDatePicker(BuildContext context) async {
+    final state = context.read<PrayerTimesBloc>().state;
+    if (state is! PrayerTimesLoaded) return;
+
+    final date = await showDatePicker(
+      context: context,
+      initialDate: state.selectedDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      locale: const Locale('ar'),
+    );
+
+    if (date != null && context.mounted) {
+      context.read<PrayerTimesBloc>().add(ChangeDate(date));
+    }
+  }
+
+  Future<void> _toggleAdhan() async {
+    if (_isPlayingAdhan) {
+      await _adhanService.stopAdhan();
+    } else {
+      await _adhanService.playAdhan();
+    }
+  }
+
+  void _showAdhanSettingsInfo() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.notifications_active, color: Colors.green),
+                SizedBox(width: 8),
+                Text('تفعيل الأذان التلقائي'),
+              ],
+            ),
+            content: const Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'يمكنك تفعيل الأذان التلقائي لكل صلاة بشكل منفصل:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 12),
+                Text('• استخدم الزر بجانب كل صلاة لتفعيل أو إلغاء الأذان'),
+                SizedBox(height: 8),
+                Text('• سيتم تشغيل الأذان تلقائياً عند دخول وقت الصلاة'),
+                SizedBox(height: 8),
+                Text('• يعمل الأذان حتى لو كان التطبيق مغلقاً'),
+                SizedBox(height: 8),
+                Text('• تأكد من السماح للتطبيق بإرسال الإشعارات'),
+                SizedBox(height: 12),
+                Text(
+                  '💡 ملاحظة: قد تحتاج لتعطيل وضع توفير البطارية للتطبيق',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('حسناً'),
+              ),
+            ],
+          ),
+    );
+  }
+}
