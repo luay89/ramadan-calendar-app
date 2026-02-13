@@ -19,16 +19,16 @@ class PrayerTimesLoaded extends PrayerTimesState {
   final PrayerTimesEntity prayerTimes;
   final LocationEntity location;
   final DateTime selectedDate;
-  final bool isSearching;
-  final List<LocationEntity>? searchResults;
+  final bool isRefreshingLocation;
+  final DateTime lastUpdate; // لتحديث العد التنازلي
 
-  const PrayerTimesLoaded({
+  PrayerTimesLoaded({
     required this.prayerTimes,
     required this.location,
     required this.selectedDate,
-    this.isSearching = false,
-    this.searchResults,
-  });
+    this.isRefreshingLocation = false,
+    DateTime? lastUpdate,
+  }) : lastUpdate = lastUpdate ?? DateTime.now();
 
   /// الحصول على الصلاة القادمة
   MapEntry<String, DateTime> get nextPrayer {
@@ -54,15 +54,15 @@ class PrayerTimesLoaded extends PrayerTimesState {
     PrayerTimesEntity? prayerTimes,
     LocationEntity? location,
     DateTime? selectedDate,
-    bool? isSearching,
-    List<LocationEntity>? searchResults,
+    bool? isRefreshingLocation,
+    DateTime? lastUpdate,
   }) {
     return PrayerTimesLoaded(
       prayerTimes: prayerTimes ?? this.prayerTimes,
       location: location ?? this.location,
       selectedDate: selectedDate ?? this.selectedDate,
-      isSearching: isSearching ?? this.isSearching,
-      searchResults: searchResults ?? this.searchResults,
+      isRefreshingLocation: isRefreshingLocation ?? this.isRefreshingLocation,
+      lastUpdate: lastUpdate ?? DateTime.now(),
     );
   }
 
@@ -71,18 +71,18 @@ class PrayerTimesLoaded extends PrayerTimesState {
     prayerTimes,
     location,
     selectedDate,
-    isSearching,
-    searchResults,
-    DateTime.now().second, // لتحديث العد التنازلي
+    isRefreshingLocation,
+    lastUpdate,
   ];
 }
 
 /// حالة الخطأ
 class PrayerTimesError extends PrayerTimesState {
   final String message;
+  final GPSErrorType? errorType;
 
-  const PrayerTimesError(this.message);
+  const PrayerTimesError(this.message, {this.errorType});
 
   @override
-  List<Object> get props => [message];
+  List<Object?> get props => [message, errorType];
 }

@@ -27,8 +27,8 @@ class PrayerTimeUtils {
     params.fajrAngle = AppConstants.fajrAngle;
     params.ishaAngle = AppConstants.ishaAngle;
 
-    // إضافة تأخير للمغرب (4 دقائق بعد غروب الشمس)
-    params.adjustments.maghrib = 4;
+    // إضافة تأخير للمغرب (15 دقيقة بعد غروب الشمس - زوال الحمرة الشرقية)
+    params.adjustments.maghrib = AppConstants.maghribAngle.toInt();
 
     // تعديل طريقة حساب منتصف الليل
     params.highLatitudeRule = HighLatitudeRule.middle_of_the_night;

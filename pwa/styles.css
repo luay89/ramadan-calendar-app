@@ -1,0 +1,919 @@
+/**
+ * أنماط CSS لتقويم رمضان - إمساكية
+ * Mobile First Design
+ * 
+ * @author Ramadan Calendar PWA
+ * @version 1.0.0
+ */
+
+/* ==================== المتغيرات ====================  */
+:root {
+    /* الألوان الأساسية */
+    --primary-color: #1a4d2e;
+    --primary-light: #2d6b45;
+    --primary-dark: #0f2d1a;
+    --secondary-color: #d4a574;
+    --accent-color: #f4c430;
+    
+    /* ألوان الخلفية */
+    --bg-color: #0a1f14;
+    --bg-secondary: #0f2d1a;
+    --card-bg: #1a4d2e;
+    --card-bg-hover: #2d6b45;
+    
+    /* ألوان النص */
+    --text-primary: #ffffff;
+    --text-secondary: #b8d4c0;
+    --text-muted: #6b8f7a;
+    
+    /* ألوان الحالة */
+    --success-color: #4ade80;
+    --warning-color: #fbbf24;
+    --danger-color: #ef4444;
+    --info-color: #3b82f6;
+    
+    /* الظلال */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
+    
+    /* التباعد */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    
+    /* الزوايا */
+    --radius-sm: 0.5rem;
+    --radius-md: 1rem;
+    --radius-lg: 1.5rem;
+    --radius-full: 9999px;
+    
+    /* الانتقالات */
+    --transition-fast: 150ms ease;
+    --transition-normal: 300ms ease;
+    --transition-slow: 500ms ease;
+    
+    /* الخطوط */
+    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-md: 1rem;
+    --font-size-lg: 1.25rem;
+    --font-size-xl: 1.5rem;
+    --font-size-2xl: 2rem;
+    --font-size-3xl: 2.5rem;
+}
+
+/* ==================== الوضع الفاتح ==================== */
+[data-theme="light"] {
+    --bg-color: #f0f5f2;
+    --bg-secondary: #e0ebe5;
+    --card-bg: #ffffff;
+    --card-bg-hover: #f5f9f7;
+    --text-primary: #1a4d2e;
+    --text-secondary: #3d6b52;
+    --text-muted: #6b8f7a;
+}
+
+/* ==================== إعادة التعيين ==================== */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    font-family: var(--font-family);
+    background: var(--bg-color);
+    color: var(--text-primary);
+    min-height: 100vh;
+    min-height: 100dvh;
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==================== شاشة التحميل ==================== */
+.loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.loading-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.loading-content {
+    text-align: center;
+    animation: fadeInUp 0.5s ease;
+}
+
+.loading-icon {
+    font-size: 4rem;
+    margin-bottom: var(--spacing-md);
+    animation: pulse 2s infinite;
+}
+
+.loading-content h2 {
+    font-size: var(--font-size-xl);
+    margin-bottom: var(--spacing-lg);
+    color: var(--text-primary);
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--text-muted);
+    border-top-color: var(--accent-color);
+    border-radius: 50%;
+    margin: 0 auto var(--spacing-md);
+    animation: spin 1s linear infinite;
+}
+
+.loading-content p {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+/* ==================== التطبيق الرئيسي ==================== */
+.app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+    transition: opacity 0.3s ease;
+}
+
+.app.hidden {
+    display: none;
+}
+
+/* ==================== الرأس ==================== */
+.app-header {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+    padding: var(--spacing-md);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-md);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.app-title {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* ==================== المحتوى الرئيسي ==================== */
+.app-main {
+    flex: 1;
+    padding: var(--spacing-md);
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* ==================== البطاقات ==================== */
+.card {
+    background: var(--card-bg);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+    box-shadow: var(--shadow-md);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.card-title {
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+}
+
+/* ==================== بطاقة التاريخ ==================== */
+.date-card {
+    text-align: center;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+}
+
+.date-hijri {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    margin-bottom: var(--spacing-sm);
+    color: var(--accent-color);
+}
+
+.date-hijri span {
+    margin: 0 var(--spacing-xs);
+}
+
+.date-gregorian {
+    font-size: var(--font-size-md);
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-md);
+}
+
+.location-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+/* ==================== بطاقة العد التنازلي ==================== */
+.countdown-card {
+    text-align: center;
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+}
+
+.countdown-label {
+    font-size: var(--font-size-md);
+    margin-bottom: var(--spacing-md);
+    color: var(--text-secondary);
+}
+
+.countdown-label .prayer-name {
+    color: var(--accent-color);
+    font-weight: 700;
+    font-size: var(--font-size-lg);
+    display: block;
+    margin-top: var(--spacing-xs);
+}
+
+.countdown-timer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.time-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.3);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    min-width: 70px;
+}
+
+.time-value {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--accent-color);
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+}
+
+.time-label {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    margin-top: var(--spacing-xs);
+}
+
+.time-separator {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.next-prayer-time {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+/* ==================== جدول أوقات الصلاة ==================== */
+.prayer-times-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.prayer-row {
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.prayer-row:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.prayer-row.current {
+    background: var(--primary-light);
+    border: 2px solid var(--accent-color);
+}
+
+.prayer-row.passed {
+    opacity: 0.5;
+}
+
+.prayer-icon {
+    font-size: var(--font-size-xl);
+    text-align: center;
+}
+
+.prayer-label {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.prayer-time {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--accent-color);
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+    direction: ltr;
+}
+
+/* ==================== بطاقة التحكم ==================== */
+.controls-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.control-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ==================== الأزرار ==================== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: var(--accent-color);
+    color: var(--primary-dark);
+}
+
+.btn-primary:hover {
+    background: #e6b82a;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--primary-light);
+    color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+    background: var(--primary-color);
+}
+
+.btn-danger {
+    background: var(--danger-color);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+.btn-small {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-sm);
+}
+
+.btn-large {
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-size: var(--font-size-lg);
+}
+
+.icon-btn {
+    background: transparent;
+    border: none;
+    font-size: var(--font-size-lg);
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.icon-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.icon-btn.small {
+    font-size: var(--font-size-sm);
+    padding: var(--spacing-xs);
+}
+
+/* ==================== Toggle Switch ==================== */
+.toggle-switch {
+    position: relative;
+    width: 50px;
+    height: 26px;
+    appearance: none;
+    background: var(--text-muted);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.toggle-switch::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: transform var(--transition-fast);
+}
+
+.toggle-switch:checked {
+    background: var(--success-color);
+}
+
+.toggle-switch:checked::before {
+    transform: translateX(24px);
+}
+
+/* ==================== حقول الإدخال ==================== */
+.input-field {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-md);
+    background: var(--bg-secondary);
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    transition: border-color var(--transition-fast);
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.input-field::placeholder {
+    color: var(--text-muted);
+}
+
+.select-field {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-md);
+    background: var(--bg-secondary);
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.range-slider {
+    width: 100%;
+    height: 8px;
+    appearance: none;
+    background: var(--text-muted);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+}
+
+.range-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* ==================== بطاقة الحالة ==================== */
+.status-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-badge {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+}
+
+.status-badge.online {
+    background: var(--success-color);
+    color: var(--primary-dark);
+}
+
+.status-badge.offline {
+    background: var(--danger-color);
+    color: white;
+}
+
+/* ==================== شريط مشغل الأذان ==================== */
+.adhan-player-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--primary-dark);
+    padding: var(--spacing-md);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(100%);
+    transition: transform var(--transition-normal);
+    z-index: 200;
+}
+
+.adhan-player-bar.visible {
+    transform: translateY(0);
+}
+
+.adhan-player-bar.hidden {
+    transform: translateY(100%);
+}
+
+.player-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.player-title {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--accent-color);
+}
+
+.player-progress {
+    flex: 1;
+    height: 6px;
+    background: var(--text-muted);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: var(--accent-color);
+    width: 0%;
+    transition: width 100ms linear;
+}
+
+/* ==================== الذيل ==================== */
+.app-footer {
+    text-align: center;
+    padding: var(--spacing-lg);
+    color: var(--text-muted);
+    font-size: var(--font-size-xs);
+}
+
+.app-footer .version {
+    margin-top: var(--spacing-xs);
+    opacity: 0.5;
+}
+
+/* ==================== النوافذ المنبثقة ==================== */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-md);
+    z-index: 1000;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity var(--transition-normal), visibility var(--transition-normal);
+}
+
+.modal.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h2 {
+    font-size: var(--font-size-lg);
+}
+
+.modal-body {
+    padding: var(--spacing-lg);
+}
+
+.modal-footer {
+    padding: var(--spacing-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+}
+
+/* ==================== أقسام الإعدادات ==================== */
+.settings-section {
+    margin-bottom: var(--spacing-xl);
+}
+
+.settings-section h3 {
+    font-size: var(--font-size-md);
+    margin-bottom: var(--spacing-md);
+    color: var(--accent-color);
+}
+
+.setting-item {
+    margin-bottom: var(--spacing-md);
+}
+
+.setting-item label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    color: var(--text-secondary);
+}
+
+/* ==================== نافذة الموقع ==================== */
+.location-options {
+    text-align: center;
+}
+
+.or-divider {
+    margin: var(--spacing-lg) 0;
+    color: var(--text-muted);
+    position: relative;
+}
+
+.or-divider::before,
+.or-divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 40%;
+    height: 1px;
+    background: var(--text-muted);
+}
+
+.or-divider::before {
+    right: 55%;
+}
+
+.or-divider::after {
+    left: 55%;
+}
+
+.manual-location-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.city-results {
+    margin-top: var(--spacing-md);
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.city-result-item {
+    padding: var(--spacing-md);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-sm);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.city-result-item:hover {
+    background: var(--primary-light);
+}
+
+/* ==================== Toast الإشعارات ==================== */
+.toast-container {
+    position: fixed;
+    top: var(--spacing-lg);
+    right: var(--spacing-md);
+    left: var(--spacing-md);
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    pointer-events: none;
+}
+
+.toast {
+    background: var(--card-bg);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lg);
+    animation: slideIn 0.3s ease;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.toast.success {
+    border-right: 4px solid var(--success-color);
+}
+
+.toast.error {
+    border-right: 4px solid var(--danger-color);
+}
+
+.toast.warning {
+    border-right: 4px solid var(--warning-color);
+}
+
+.toast.info {
+    border-right: 4px solid var(--info-color);
+}
+
+/* ==================== الرسوم المتحركة ==================== */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ==================== الاستجابة للشاشات الكبيرة ==================== */
+@media (min-width: 768px) {
+    :root {
+        --font-size-lg: 1.5rem;
+        --font-size-xl: 1.75rem;
+        --font-size-2xl: 2.5rem;
+    }
+    
+    .app-header {
+        padding: var(--spacing-lg);
+    }
+    
+    .app-main {
+        padding: var(--spacing-xl);
+    }
+    
+    .time-unit {
+        padding: var(--spacing-lg);
+        min-width: 90px;
+    }
+    
+    .prayer-row {
+        padding: var(--spacing-lg);
+    }
+}
+
+/* ==================== تحسينات الوصول ==================== */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ==================== دعم iOS Safe Area ==================== */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .adhan-player-bar {
+        padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom));
+    }
+    
+    .app-footer {
+        padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom));
+    }
+}
+
+/* ==================== طباعة ==================== */
+@media print {
+    .app-header,
+    .controls-card,
+    .adhan-player-bar,
+    .app-footer,
+    .modal {
+        display: none !important;
+    }
+    
+    body {
+        background: white;
+        color: black;
+    }
+    
+    .card {
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+}

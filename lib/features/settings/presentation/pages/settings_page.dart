@@ -388,7 +388,9 @@ class _SettingsPageState extends State<SettingsPage> {
               leading: Icon(Icons.share, color: AppColors.primary),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               onTap: () {
-                Share.share('تطبيق تقويم رمضان - مواقيت الصلاة والأدعية والزيارات\n\nحمّل التطبيق الآن!');
+                Share.share(
+                  'تطبيق تقويم رمضان - مواقيت الصلاة والأدعية والزيارات\n\nحمّل التطبيق الآن!',
+                );
               },
             ),
           ]),

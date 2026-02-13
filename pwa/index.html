@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a5f2a">
+    <meta name="description" content="تقويم رمضان - إمساكية ومواقيت الصلاة والأذان">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="تقويم رمضان">
+    
+    <title>تقويم رمضان - إمساكية</title>
+    
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
+    
+    <style>
+        :root {
+            --primary: #1a5f2a;
+            --primary-dark: #0d4a1a;
+            --primary-light: #2d7a3e;
+            --gold: #d4af37;
+            --gold-light: #f0d875;
+            --bg: #0a1f10;
+            --bg-card: #122318;
+            --text: #ffffff;
+            --text-muted: #a0b5a5;
+            --border: #1e3d28;
+            --danger: #e74c3c;
+            --success: #27ae60;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+            background: linear-gradient(180deg, var(--bg) 0%, #0f2817 100%);
+            color: var(--text);
+            min-height: 100vh;
+            direction: rtl;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 1rem;
+            padding-bottom: 100px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 1.5rem 0;
+            background: linear-gradient(180deg, var(--primary-dark) 0%, transparent 100%);
+            margin-bottom: 1rem;
+        }
+
+        .app-title {
+            font-size: 1.8rem;
+            color: var(--gold);
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .app-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Date Card */
+        .date-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        #current-date {
+            font-size: 1.1rem;
+            color: var(--text);
+            margin-bottom: 0.3rem;
+        }
+
+        #hijri-date {
+            font-size: 0.95rem;
+            color: var(--gold);
+        }
+
+        /* Location */
+        .location-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .location-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .location-icon {
+            font-size: 1.3rem;
+        }
+
+        #location-name {
+            font-size: 0.95rem;
+            color: var(--text);
+        }
+
+        #refresh-location {
+            background: var(--primary);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        /* Next Prayer */
+        .next-prayer-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(26, 95, 42, 0.3);
+        }
+
+        .next-prayer-label {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 0.3rem;
+        }
+
+        #next-prayer-name {
+            font-size: 1.8rem;
+            color: var(--gold);
+            margin-bottom: 0.5rem;
+        }
+
+        #next-prayer-time {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .countdown-container {
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .countdown-label {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 0.3rem;
+        }
+
+        #countdown {
+            font-size: 1.5rem;
+            font-family: monospace;
+            color: var(--gold-light);
+        }
+
+        /* Prayer Times Table */
+        .prayer-times-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+
+        .prayer-times-header {
+            background: var(--primary-dark);
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.1rem;
+            color: var(--gold);
+        }
+
+        .prayer-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.3s;
+        }
+
+        .prayer-row:last-child {
+            border-bottom: none;
+        }
+
+        .prayer-row.current {
+            background: rgba(212, 175, 55, 0.15);
+        }
+
+        .prayer-row.next {
+            background: rgba(26, 95, 42, 0.3);
+        }
+
+        .prayer-name {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .prayer-icon {
+            font-size: 1.2rem;
+        }
+
+        .prayer-name-text {
+            font-size: 1rem;
+        }
+
+        .prayer-time {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--gold);
+            font-family: monospace;
+        }
+
+        /* Notification Prompt */
+        .notification-prompt {
+            display: none;
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--gold);
+        }
+
+        .notification-prompt h3 {
+            color: var(--gold);
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .notification-prompt p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .notification-buttons {
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        /* Buttons */
+        .btn {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+
+        /* Settings Card */
+        .settings-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        #notification-status {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        #notification-toggle {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        #notification-toggle.active {
+            background: var(--danger);
+        }
+
+        /* Adhan Overlay */
+        .adhan-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .adhan-overlay.active {
+            display: flex;
+        }
+
+        .adhan-content {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .adhan-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .adhan-content h2 {
+            color: var(--gold);
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .adhan-animation {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .wave {
+            width: 4px;
+            height: 30px;
+            background: var(--gold);
+            border-radius: 2px;
+            animation: wave 1s ease-in-out infinite;
+        }
+
+        .wave:nth-child(2) { animation-delay: 0.1s; }
+        .wave:nth-child(3) { animation-delay: 0.2s; }
+
+        @keyframes wave {
+            0%, 100% { height: 10px; }
+            50% { height: 40px; }
+        }
+
+        #stop-adhan {
+            padding: 1rem 2rem;
+            font-size: 1rem;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 31, 16, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--bg-card);
+            color: var(--text);
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            border: 1px solid var(--border);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1001;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Floating Button */
+        .floating-btn {
+            position: fixed;
+            bottom: 90px;
+            right: 1rem;
+            background: var(--primary);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 30px;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: none;
+            z-index: 100;
+        }
+
+        /* Footer */
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            padding: 0.8rem;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+        }
+
+        .footer-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.2rem;
+        }
+
+        .footer-btn span:first-child {
+            font-size: 1.3rem;
+        }
+
+        .footer-btn.active {
+            color: var(--gold);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 400px) {
+            .app-title { font-size: 1.5rem; }
+            #next-prayer-time { font-size: 2rem; }
+            .prayer-row { padding: 0.8rem 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1 class="app-title">🌙 تقويم رمضان</h1>
+        <p class="app-subtitle">إمساكية ومواقيت الصلاة</p>
+    </header>
+
+    <div class="container">
+        <!-- Date Card -->
+        <div class="date-card">
+            <div id="current-date">جاري التحميل...</div>
+            <div id="hijri-date"></div>
+        </div>
+
+        <!-- Location Card -->
+        <div class="location-card">
+            <div class="location-info">
+                <span class="location-icon">📍</span>
+                <span id="location-name">جاري تحديد الموقع...</span>
+            </div>
+            <button id="refresh-location" title="تحديث الموقع">🔄</button>
+        </div>
+
+        <!-- Next Prayer Card -->
+        <div class="next-prayer-card">
+            <div class="next-prayer-label">الصلاة القادمة</div>
+            <div id="next-prayer-name">--</div>
+            <div id="next-prayer-time">--:--</div>
+            <div class="countdown-container">
+                <div class="countdown-label">الوقت المتبقي</div>
+                <div id="countdown">--:--:--</div>
+            </div>
+        </div>
+
+        <!-- Notification Prompt -->
+        <div id="notification-prompt" class="notification-prompt">
+            <h3>🔔 تفعيل الإشعارات</h3>
+            <p>اسمح بالإشعارات لتلقي تنبيهات أوقات الصلاة والأذان</p>
+            <div class="notification-buttons">
+                <button id="allow-notifications" class="btn btn-primary">السماح</button>
+                <button id="deny-notifications" class="btn btn-secondary">لاحقاً</button>
+            </div>
+        </div>
+
+        <!-- Prayer Times Card -->
+        <div class="prayer-times-card">
+            <div class="prayer-times-header">مواقيت الصلاة</div>
+            
+            <div class="prayer-row" id="row-imsak">
+                <div class="prayer-name">
+                    <span class="prayer-icon">⏰</span>
+                    <span class="prayer-name-text">الإمساك</span>
+                </div>
+                <span class="prayer-time" id="time-imsak">--:--</span>
+            </div>
+            
+            <div class="prayer-row" id="row-fajr">
+                <div class="prayer-name">
+                    <span class="prayer-icon">🌙</span>
+                    <span class="prayer-name-text">الفجر</span>
+                </div>
+                <span class="prayer-time" id="time-fajr">--:--</span>
+            </div>
+            
+            <div class="prayer-row" id="row-sunrise">
+                <div class="prayer-name">
+                    <span class="prayer-icon">🌅</span>
+                    <span class="prayer-name-text">الشروق</span>
+                </div>
+                <span class="prayer-time" id="time-sunrise">--:--</span>
+            </div>
+            
+            <div class="prayer-row" id="row-dhuhr">
+                <div class="prayer-name">
+                    <span class="prayer-icon">☀️</span>
+                    <span class="prayer-name-text">الظهر</span>
+                </div>
+                <span class="prayer-time" id="time-dhuhr">--:--</span>
+            </div>
+            
+            <div class="prayer-row" id="row-asr">
+                <div class="prayer-name">
+                    <span class="prayer-icon">🌤️</span>
+                    <span class="prayer-name-text">العصر</span>
+                </div>
+                <span class="prayer-time" id="time-asr">--:--</span>
+            </div>
+            
+            <div class="prayer-row" id="row-maghrib">
+                <div class="prayer-name">
+                    <span class="prayer-icon">🌆</span>
+                    <span class="prayer-name-text">المغرب</span>
+                </div>
+                <span class="prayer-time" id="time-maghrib">--:--</span>
+            </div>
+            
+            <div class="prayer-row" id="row-isha">
+                <div class="prayer-name">
+                    <span class="prayer-icon">🌃</span>
+                    <span class="prayer-name-text">العشاء</span>
+                </div>
+                <span class="prayer-time" id="time-isha">--:--</span>
+            </div>
+        </div>
+
+        <!-- Settings Card -->
+        <div class="settings-card">
+            <div class="setting-item">
+                <div class="setting-label">
+                    <span>🔔</span>
+                    <span>الإشعارات</span>
+                </div>
+                <div>
+                    <span id="notification-status"></span>
+                    <button id="notification-toggle" class="btn btn-primary">تفعيل</button>
+                </div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-label">
+                    <span>🔊</span>
+                    <span>الأذان</span>
+                </div>
+                <button id="play-adhan" class="btn btn-primary">تشغيل</button>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-label">
+                    <span>📤</span>
+                    <span>مشاركة التطبيق</span>
+                </div>
+                <button id="share-btn" class="btn btn-secondary">مشاركة</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <button class="footer-btn active">
+            <span>🕌</span>
+            <span>الصلاة</span>
+        </button>
+        <button class="footer-btn">
+            <span>📅</span>
+            <span>التقويم</span>
+        </button>
+        <button class="footer-btn">
+            <span>⚙️</span>
+            <span>الإعدادات</span>
+        </button>
+    </footer>
+
+    <!-- Audio Element -->
+    <audio id="adhan-audio" preload="auto">
+        <source src="/assets/audio/adhan.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Scripts -->
+    <script src="/prayerEngine.js"></script>
+    <script src="/db.js"></script>
+    <script src="/locationManager.js"></script>
+    <script src="/notificationManager.js"></script>
+    <script src="/adhanPlayer.js"></script>
+    <script src="/app.js"></script>
+</body>
+</html>

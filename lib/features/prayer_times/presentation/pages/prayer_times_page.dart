@@ -5,11 +5,12 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/date_utils.dart';
 import '../../../../core/services/adhan_audio_service.dart';
 import '../../../../core/services/adhan_notification_service.dart';
+import '../../../../core/services/gps_location_service.dart';
 import '../../domain/entities/prayer_times_entity.dart';
 import '../bloc/prayer_times_bloc.dart';
 import '../widgets/prayer_time_card.dart';
 import '../widgets/next_prayer_widget.dart';
-import '../widgets/location_search_widget.dart';
+import '../widgets/hijri_gregorian_calendar.dart';
 
 /// صفحة مواقيت الصلاة
 class PrayerTimesPage extends StatefulWidget {
@@ -82,9 +83,9 @@ class _PrayerTimesPageState extends State<PrayerTimesPage> {
             tooltip: _isPlayingAdhan ? 'إيقاف الأذان' : 'تشغيل الأذان',
           ),
           IconButton(
-            onPressed: () => _showLocationSearch(context),
-            icon: const Icon(Icons.location_on),
-            tooltip: 'تغيير الموقع',
+            onPressed: () => _refreshLocation(context),
+            icon: const Icon(Icons.my_location),
+            tooltip: 'تحديث الموقع',
           ),
           IconButton(
             onPressed: () => _showDatePicker(context),
@@ -100,35 +101,13 @@ class _PrayerTimesPageState extends State<PrayerTimesPage> {
           }
 
           if (state is PrayerTimesError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: AppColors.error,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(state.message, textAlign: TextAlign.center),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<PrayerTimesBloc>().add(
-                        const LoadPrayerTimes(),
-                      );
-                    },
-                    child: const Text('إعادة المحاولة'),
-                  ),
-                ],
-              ),
-            );
+            return _buildErrorWidget(context, state);
           }
 
           if (state is PrayerTimesLoaded) {
             // جدولة الأذان للصلوات المفعلة
             _scheduleEnabledAdhans(state.prayerTimes);
-            
+
             return RefreshIndicator(
               onRefresh: () async {
                 context.read<PrayerTimesBloc>().add(const LoadPrayerTimes());
@@ -165,33 +144,126 @@ class _PrayerTimesPageState extends State<PrayerTimesPage> {
   }
 
   Widget _buildHeader(PrayerTimesLoaded state) {
+    final hijriDate = AppDateUtils.gregorianToHijri(state.selectedDate);
+    final dayName = AppDateUtils.getDayNameArabic(state.selectedDate);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // الموقع
             Row(
               children: [
-                const Icon(Icons.location_on, color: AppColors.primary),
+                state.isRefreshingLocation
+                    ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : const Icon(Icons.location_on, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    state.location.fullName,
-                    style: Theme.of(context).textTheme.titleMedium,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        state.location.fullName,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      Text(
+                        '${state.location.latitude.toStringAsFixed(4)}°, ${state.location.longitude.toStringAsFixed(4)}°',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                      ),
+                    ],
                   ),
+                ),
+                IconButton(
+                  onPressed: () => _refreshLocation(context),
+                  icon: const Icon(Icons.refresh, size: 20),
+                  tooltip: 'تحديث الموقع',
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const Divider(height: 24),
+            // التقويم المدمج
             Row(
               children: [
-                const Icon(Icons.calendar_today, color: AppColors.secondary),
+                const Icon(Icons.calendar_month, color: AppColors.secondary),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    AppDateUtils.formatFullDate(state.selectedDate),
-                    style: Theme.of(context).textTheme.bodyMedium,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // اسم اليوم
+                      Text(
+                        dayName,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      // التاريخ الهجري
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.brightness_2,
+                            size: 16,
+                            color: Colors.amber,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            AppDateUtils.formatHijriArabic(hijriDate),
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'هـ',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      // التاريخ الميلادي
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.wb_sunny_outlined,
+                            size: 16,
+                            color: Colors.orange,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            AppDateUtils.formatGregorianArabic(
+                              state.selectedDate,
+                            ),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: Colors.grey.shade600),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'م',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
+                ),
+                IconButton(
+                  onPressed: () => _showDatePicker(context),
+                  icon: const Icon(Icons.edit_calendar, size: 20),
+                  tooltip: 'تغيير التاريخ',
                 ),
               ],
             ),
@@ -314,20 +386,70 @@ class _PrayerTimesPageState extends State<PrayerTimesPage> {
     );
   }
 
-  void _showLocationSearch(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  /// تحديث الموقع من GPS
+  void _refreshLocation(BuildContext context) {
+    context.read<PrayerTimesBloc>().add(const RefreshLocation());
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('جاري تحديث الموقع...'),
+        duration: Duration(seconds: 2),
       ),
-      builder:
-          (ctx) => LocationSearchWidget(
-            onLocationChanged: () {
-              // إعادة تحميل أوقات الصلاة بعد تغيير الموقع
-              context.read<PrayerTimesBloc>().add(const LoadPrayerTimes());
-            },
-          ),
+    );
+  }
+
+  /// بناء واجهة الخطأ
+  Widget _buildErrorWidget(BuildContext context, PrayerTimesError state) {
+    IconData icon = Icons.error_outline;
+    String buttonText = 'إعادة المحاولة';
+    VoidCallback? secondaryAction;
+    String? secondaryButtonText;
+
+    // تخصيص الواجهة حسب نوع الخطأ
+    if (state.errorType == GPSErrorType.serviceDisabled) {
+      icon = Icons.location_disabled;
+      secondaryButtonText = 'فتح الإعدادات';
+      secondaryAction =
+          () => GPSLocationService.instance.openLocationSettings();
+    } else if (state.errorType == GPSErrorType.permissionDenied) {
+      icon = Icons.location_off;
+    } else if (state.errorType == GPSErrorType.permissionDeniedForever) {
+      icon = Icons.location_off;
+      secondaryButtonText = 'فتح إعدادات التطبيق';
+      secondaryAction = () => GPSLocationService.instance.openAppSettings();
+    }
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 80, color: AppColors.error),
+            const SizedBox(height: 24),
+            Text(
+              state.message,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                context.read<PrayerTimesBloc>().add(const LoadPrayerTimes());
+              },
+              icon: const Icon(Icons.refresh),
+              label: Text(buttonText),
+            ),
+            if (secondaryAction != null) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: secondaryAction,
+                icon: const Icon(Icons.settings),
+                label: Text(secondaryButtonText!),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 
@@ -335,12 +457,11 @@ class _PrayerTimesPageState extends State<PrayerTimesPage> {
     final state = context.read<PrayerTimesBloc>().state;
     if (state is! PrayerTimesLoaded) return;
 
-    final date = await showDatePicker(
+    final date = await showHijriGregorianCalendarPicker(
       context: context,
       initialDate: state.selectedDate,
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      locale: const Locale('ar'),
     );
 
     if (date != null && context.mounted) {

@@ -76,17 +76,22 @@ class AdhanNotificationService {
 
   /// طلب صلاحيات Android
   Future<void> _requestAndroidPermissions() async {
-    final androidPlugin =
-        _notificationsPlugin
-            .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin
-            >();
+    try {
+      final androidPlugin =
+          _notificationsPlugin
+              .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin
+              >();
 
-    if (androidPlugin != null) {
-      // طلب صلاحية الإشعارات
-      await androidPlugin.requestNotificationsPermission();
-      // طلب صلاحية المنبهات الدقيقة
-      await androidPlugin.requestExactAlarmsPermission();
+      if (androidPlugin != null) {
+        // طلب صلاحية الإشعارات
+        await androidPlugin.requestNotificationsPermission();
+        // طلب صلاحية المنبهات الدقيقة
+        await androidPlugin.requestExactAlarmsPermission();
+      }
+    } catch (e) {
+      // تجاهل الأخطاء - سيتم طلب الصلاحيات عند الحاجة
+      print('خطأ في طلب صلاحيات الإشعارات: $e');
     }
   }
 

@@ -26,9 +26,9 @@ class AppConstants {
   static const String defaultCity = 'بغداد';
 
   // Jafari Prayer Calculation Parameters
-  static const double fajrAngle = 16.0; // زاوية الفجر للمذهب الجعفري
+  static const double fajrAngle = 18.0; // زاوية الفجر للمذهب الجعفري (18 درجة)
   static const double ishaAngle = 14.0; // زاوية العشاء للمذهب الجعفري
-  static const double maghribAngle = 4.0; // زاوية المغرب بعد الغروب
+  static const double maghribAngle = -2.0; // تعديل المغرب (دقائق)
 
   // Animation Durations
   static const Duration shortAnimation = Duration(milliseconds: 200);

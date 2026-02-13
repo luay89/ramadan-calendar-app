@@ -10,6 +10,12 @@ android {
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
+    sourceSets {
+        getByName("main") {
+            res.srcDirs("src/main/res")
+        }
+    }
+
     compileOptions {
         // Enable core library desugaring for flutter_local_notifications
         isCoreLibraryDesugaringEnabled = true

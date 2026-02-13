@@ -42,22 +42,17 @@ class ChangeDate extends PrayerTimesEvent {
   List<Object> get props => [date];
 }
 
-/// البحث عن موقع
-class SearchLocation extends PrayerTimesEvent {
-  final String query;
-
-  const SearchLocation(this.query);
-
-  @override
-  List<Object> get props => [query];
+/// تحديث الموقع من GPS
+class RefreshLocation extends PrayerTimesEvent {
+  const RefreshLocation();
 }
 
-/// اختيار موقع
-class SelectLocation extends PrayerTimesEvent {
-  final LocationEntity location;
+/// تغيير الموقع تلقائياً
+class LocationChanged extends PrayerTimesEvent {
+  final GPSLocation newLocation;
 
-  const SelectLocation(this.location);
+  const LocationChanged(this.newLocation);
 
   @override
-  List<Object> get props => [location];
+  List<Object> get props => [newLocation];
 }

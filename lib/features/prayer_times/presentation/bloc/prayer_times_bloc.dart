@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../../../../core/constants/app_constants.dart';
-import '../../../../core/usecases/usecase.dart';
+import '../../../../core/services/gps_location_service.dart';
 import '../../domain/entities/location_entity.dart';
 import '../../domain/entities/prayer_times_entity.dart';
 import '../../domain/usecases/get_current_location.dart';
@@ -12,13 +11,15 @@ import '../../domain/repositories/prayer_times_repository.dart';
 part 'prayer_times_event.dart';
 part 'prayer_times_state.dart';
 
-/// Bloc مواقيت الصلاة
+/// Bloc مواقيت الصلاة - معتمد على GPS فقط
 class PrayerTimesBloc extends Bloc<PrayerTimesEvent, PrayerTimesState> {
   final GetPrayerTimes getPrayerTimes;
   final GetCurrentLocation getCurrentLocation;
   final PrayerTimesRepository repository;
+  final GPSLocationService _gpsService = GPSLocationService.instance;
 
   Timer? _countdownTimer;
+  StreamSubscription? _locationChangeSubscription;
 
   PrayerTimesBloc({
     required this.getPrayerTimes,
@@ -29,53 +30,58 @@ class PrayerTimesBloc extends Bloc<PrayerTimesEvent, PrayerTimesState> {
     on<LoadPrayerTimesForLocation>(_onLoadPrayerTimesForLocation);
     on<UpdateCountdown>(_onUpdateCountdown);
     on<ChangeDate>(_onChangeDate);
-    on<SearchLocation>(_onSearchLocation);
-    on<SelectLocation>(_onSelectLocation);
+    on<RefreshLocation>(_onRefreshLocation);
+    on<LocationChanged>(_onLocationChanged);
+
+    // الاستماع لتغييرات الموقع
+    _locationChangeSubscription = _gpsService.locationChanges.listen((
+      newLocation,
+    ) {
+      add(LocationChanged(newLocation));
+    });
   }
 
   @override
   Future<void> close() {
     _countdownTimer?.cancel();
+    _locationChangeSubscription?.cancel();
     return super.close();
   }
 
-  /// تحميل مواقيت الصلاة
+  /// تحميل مواقيت الصلاة - معتمد على GPS فقط
   Future<void> _onLoadPrayerTimes(
     LoadPrayerTimes event,
     Emitter<PrayerTimesState> emit,
   ) async {
     emit(PrayerTimesLoading());
 
-    // محاولة الحصول على الموقع المحفوظ أولاً
-    final savedLocationResult = await repository.getSavedLocation();
+    // الحصول على الموقع من GPS (مع fallback للمحفوظ)
+    final gpsResult = await _gpsService.getLocationWithFallback();
 
-    LocationEntity? location;
-    savedLocationResult.fold(
-      (failure) => null,
-      (savedLocation) => location = savedLocation,
-    );
-
-    // إذا لم يكن هناك موقع محفوظ، نحاول الحصول على الموقع الحالي
-    if (location == null) {
-      final locationResult = await getCurrentLocation(const NoParams());
-
-      locationResult.fold((failure) {
-        // استخدام الموقع الافتراضي (بغداد)
-        location = const LocationEntity(
-          latitude: AppConstants.defaultLatitude,
-          longitude: AppConstants.defaultLongitude,
-          cityName: AppConstants.defaultCity,
-        );
-      }, (loc) => location = loc);
+    if (!gpsResult.isSuccess || gpsResult.location == null) {
+      emit(
+        PrayerTimesError(
+          gpsResult.errorMessage ?? 'فشل في تحديد الموقع',
+          errorType: gpsResult.errorType,
+        ),
+      );
+      return;
     }
 
-    // الحصول على مواقيت الصلاة
+    final gpsLocation = gpsResult.location!;
+    final location = LocationEntity(
+      latitude: gpsLocation.latitude,
+      longitude: gpsLocation.longitude,
+      cityName: gpsLocation.displayName,
+    );
+
+    // الحصول على مواقيت الصلاة بناءً على الإحداثيات فقط
     final result = await getPrayerTimes(
       PrayerTimesParams(
         date: DateTime.now(),
-        latitude: location!.latitude,
-        longitude: location!.longitude,
-        locationName: location!.cityName,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        locationName: location.cityName,
       ),
     );
 
@@ -86,7 +92,7 @@ class PrayerTimesBloc extends Bloc<PrayerTimesEvent, PrayerTimesState> {
       emit(
         PrayerTimesLoaded(
           prayerTimes: prayerTimes,
-          location: location!,
+          location: location,
           selectedDate: DateTime.now(),
         ),
       );
@@ -171,41 +177,85 @@ class PrayerTimesBloc extends Bloc<PrayerTimesEvent, PrayerTimesState> {
     }
   }
 
-  /// البحث عن موقع
-  Future<void> _onSearchLocation(
-    SearchLocation event,
+  /// تحديث الموقع من GPS
+  Future<void> _onRefreshLocation(
+    RefreshLocation event,
     Emitter<PrayerTimesState> emit,
   ) async {
     if (state is PrayerTimesLoaded) {
       final currentState = state as PrayerTimesLoaded;
-      emit(currentState.copyWith(isSearching: true));
+      emit(currentState.copyWith(isRefreshingLocation: true));
 
-      final result = await repository.searchLocation(event.query);
+      final gpsResult = await _gpsService.getCurrentLocation();
 
-      result.fold(
-        (failure) =>
-            emit(currentState.copyWith(isSearching: false, searchResults: [])),
-        (locations) => emit(
-          currentState.copyWith(isSearching: false, searchResults: locations),
-        ),
-      );
+      if (gpsResult.isSuccess && gpsResult.location != null) {
+        final gpsLocation = gpsResult.location!;
+        final newLocation = LocationEntity(
+          latitude: gpsLocation.latitude,
+          longitude: gpsLocation.longitude,
+          cityName: gpsLocation.displayName,
+        );
+
+        // إعادة حساب المواقيت
+        final result = await getPrayerTimes(
+          PrayerTimesParams(
+            date: currentState.selectedDate,
+            latitude: newLocation.latitude,
+            longitude: newLocation.longitude,
+            locationName: newLocation.cityName,
+          ),
+        );
+
+        result.fold(
+          (failure) => emit(currentState.copyWith(isRefreshingLocation: false)),
+          (prayerTimes) => emit(
+            currentState.copyWith(
+              prayerTimes: prayerTimes,
+              location: newLocation,
+              isRefreshingLocation: false,
+            ),
+          ),
+        );
+      } else {
+        emit(currentState.copyWith(isRefreshingLocation: false));
+      }
     }
   }
 
-  /// اختيار موقع
-  Future<void> _onSelectLocation(
-    SelectLocation event,
+  /// معالجة تغيير الموقع التلقائي
+  Future<void> _onLocationChanged(
+    LocationChanged event,
     Emitter<PrayerTimesState> emit,
   ) async {
-    // حفظ الموقع
-    await repository.saveLocation(event.location);
+    if (state is PrayerTimesLoaded) {
+      final currentState = state as PrayerTimesLoaded;
+      final gpsLocation = event.newLocation;
 
-    // إعادة تحميل المواقيت
-    add(
-      LoadPrayerTimesForLocation(
-        location: event.location,
-        date: DateTime.now(),
-      ),
-    );
+      final newLocation = LocationEntity(
+        latitude: gpsLocation.latitude,
+        longitude: gpsLocation.longitude,
+        cityName: gpsLocation.displayName,
+      );
+
+      // إعادة حساب المواقيت مع الموقع الجديد
+      final result = await getPrayerTimes(
+        PrayerTimesParams(
+          date: currentState.selectedDate,
+          latitude: newLocation.latitude,
+          longitude: newLocation.longitude,
+          locationName: newLocation.cityName,
+        ),
+      );
+
+      result.fold(
+        (failure) => null,
+        (prayerTimes) => emit(
+          currentState.copyWith(
+            prayerTimes: prayerTimes,
+            location: newLocation,
+          ),
+        ),
+      );
+    }
   }
 }

@@ -27,14 +27,12 @@ class AppShell extends StatelessWidget {
     int selectedIndex = 0;
     if (currentLocation.startsWith('/prayer-times')) {
       selectedIndex = 0;
-    } else if (currentLocation.startsWith('/calendar')) {
-      selectedIndex = 1;
     } else if (currentLocation.startsWith('/tonight')) {
-      selectedIndex = 2;
+      selectedIndex = 1;
     } else if (currentLocation.startsWith('/ramadan')) {
-      selectedIndex = 3;
+      selectedIndex = 2;
     } else if (currentLocation.startsWith('/duas')) {
-      selectedIndex = 4;
+      selectedIndex = 3;
     }
 
     return NavigationBar(
@@ -45,15 +43,12 @@ class AppShell extends StatelessWidget {
             context.go('/prayer-times');
             break;
           case 1:
-            context.go('/calendar');
-            break;
-          case 2:
             context.go('/tonight');
             break;
-          case 3:
+          case 2:
             context.go('/ramadan');
             break;
-          case 4:
+          case 3:
             context.go('/duas');
             break;
         }
@@ -63,11 +58,6 @@ class AppShell extends StatelessWidget {
           icon: Icon(Icons.access_time_outlined),
           selectedIcon: Icon(Icons.access_time_filled),
           label: 'الصلاة',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.calendar_month_outlined),
-          selectedIcon: Icon(Icons.calendar_month),
-          label: 'التقويم',
         ),
         NavigationDestination(
           icon: Icon(Icons.nightlight_outlined),
